@@ -1,8 +1,8 @@
 # GeoBrewery
 
-An interactive web application for analyzing brewery locations, beer styles, and market demographics across the United States. Click anywhere on the map to explore brewery data, population statistics, and market analysis for that location.
+Interactive web app analyzing brewery locations, beer styles, and market demographics across the US. Click anywhere on the map to explore brewery data, population stats, and market analysis for that location.
 
-## Features
+## Important Features
 
 - **Interactive Map**: Click anywhere in the US to analyze that location
 - **Brewery Analysis**: Find nearby breweries within a search radius (can make larger with slider)
