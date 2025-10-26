@@ -31,3 +31,6 @@ coverage
 
 test-results/
 playwright-report/
+
+# Fall2025Project - external data source
+Fall2025Project/
