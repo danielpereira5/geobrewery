@@ -17,7 +17,7 @@ Interactive web app analyzing brewery locations, beer styles, and market demogra
 
 ### Installation
 
-1. Clone the repository:
+1. Clone the repo:
 ```bash
 git clone https://github.com/danielpereira5/geobrewery.git
 cd geobrewery
@@ -28,7 +28,7 @@ cd geobrewery
 npm install
 ```
 
-3. Start the development server:
+3. Start the dev server:
 ```bash
 npm run dev
 ```
