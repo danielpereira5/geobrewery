@@ -5,13 +5,11 @@ An interactive web application for analyzing brewery locations, beer styles, and
 ## Features
 
 - **Interactive Map**: Click anywhere in the US to analyze that location
-- **Brewery Analysis**: Find nearby breweries within a customizable search radius
-- **Population Demographics**: View state-level population and consumption data
-- **Beer Style Analysis**: Explore the distribution of beer styles in your area
-- **Market Saturation**: Understand brewery density and market opportunities
-
-## Quick Start
-
+- **Brewery Analysis**: Find nearby breweries within a search radius (can make larger with slider)
+- **Population Demographics**: View state level population and consumption data
+- **Beer Styles Analysis**: Explore beer styles within selected area
+- **Market Saturation**: brewery density and market opportunities
+  
 ### Prerequisites
 
 - Node.js (version 16 or higher)
