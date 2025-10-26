@@ -33,18 +33,19 @@ export function resetBeers() {
   BEERS = null;
 }
 
-function parseCSV(text: string): any[] {
+function parseCSV(text: string): Record<string, string>[] {
   const [header, ...lines] = text.trim().split(/\r?\n/);
+  if (!header) return [];
   const headers = header.split(',').map(s => s.trim());
   return lines.map(line => {
     const cells = line.split(',').map(s => s.trim());
-    const o: any = {};
-    headers.forEach((h, i) => o[h] = cells[i]);
+    const o: Record<string, string> = {};
+    headers.forEach((h, i) => o[h] = cells[i] || '');
     return o;
   });
 }
 
-function parseNumber(value: any): number | null {
+function parseNumber(value: unknown): number | null {
   if (value == null || value === '' || value === '.') return null;
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
@@ -60,12 +61,12 @@ export async function loadBeers(): Promise<Beer[]> {
 
     // Parse and validate beer data
     BEERS = rows.map(r => ({
-      id: parseInt(r.id) || 0,
+      id: parseInt(r.id || '0') || 0,
       name: (r.name || '').trim(),
       abv: parseNumber(r.abv) || 0,
       ibu: parseNumber(r.ibu),
       style: (r.style || '').trim(),
-      brewery_id: parseInt(r.brewery_id) || 0,
+      brewery_id: parseInt(r.brewery_id || '0') || 0,
       ounces: parseNumber(r.ounces) || 0
     })).filter(beer => beer.id > 0 && beer.brewery_id > 0);
 

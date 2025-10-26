@@ -176,14 +176,14 @@
         </div>
       </div>
 
-      <div :class="['flex-1 overflow-hidden transition-[padding] duration-200', detailsOpen ? 'xl:pr-96' : '']">
+      <div :class="['flex-1 overflow-hidden transition-[padding] duration-200', detailsOpen ? 'sm:pr-96' : '']">
         <Map ref="mapRef" @location-selected="onLocationSelected" />
       </div>
     </main>
 
   <aside
     v-show="detailsOpen"
-    class="fixed inset-y-0 right-0 w-96 overflow-y-auto border-l border-gray-200 bg-white px-4 py-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900"
+    class="fixed inset-y-0 right-0 w-full sm:w-96 overflow-y-auto border-l border-gray-200 bg-white px-4 py-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 z-40"
   >
     <div class="flex items-start justify-between">
       <h2 class="text-base font-semibold text-gray-900 dark:text-white">Location Analysis</h2>
@@ -193,17 +193,59 @@
       </button>
     </div>
 
+    <!-- Radius Selection -->
+    <div v-if="locationData && !locationData.loading && !locationData.error" class="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+      <div class="flex items-center justify-between mb-3">
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Search Radius</label>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ searchRadius }} miles</span>
+      </div>
+      <input
+        v-model="searchRadius"
+        type="range"
+        min="10"
+        max="100"
+        step="10"
+        @change="updateSearchRadius"
+        class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+      />
+      <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
+        <span>10 mi</span>
+        <span>100 mi</span>
+      </div>
+    </div>
+
     <div v-if="locationData" class="mt-6 space-y-6">
-      <div v-if="locationData.loading" class="text-center py-8">
-        <svg class="animate-spin h-8 w-8 text-indigo-600 dark:text-green-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p class="mt-4 text-gray-500 dark:text-gray-400">Loading location data...</p>
+      <div v-if="locationData.loading" class="text-center py-12">
+        <div class="relative">
+          <div class="w-16 h-16 mx-auto mb-4">
+            <div class="absolute inset-0 rounded-full border-4 border-gray-200 dark:border-gray-700"></div>
+            <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-indigo-600 dark:border-t-green-400 animate-spin"></div>
+          </div>
+          <div class="space-y-2">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Analyzing Location</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Gathering brewery data and market insights...</p>
+            <div class="flex justify-center space-x-1 mt-4">
+              <div class="w-2 h-2 bg-indigo-600 dark:bg-green-400 rounded-full animate-bounce"></div>
+              <div class="w-2 h-2 bg-indigo-600 dark:bg-green-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+              <div class="w-2 h-2 bg-indigo-600 dark:bg-green-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div v-else-if="locationData.error" class="text-center py-8 text-red-600 dark:text-red-400">
-        <p>{{ locationData.error }}</p>
+      <div v-else-if="locationData.error" class="text-center py-12">
+        <div class="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+          <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+          </svg>
+        </div>
+        <div class="space-y-2">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Unable to Load Data</h3>
+          <p class="text-sm text-red-600 dark:text-red-400">{{ locationData.error }}</p>
+          <button @click="retryLocationAnalysis" class="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+            Try Again
+          </button>
+        </div>
       </div>
 
       <div v-else>
@@ -216,52 +258,86 @@
           <div class="mt-1 text-sm text-gray-500">Try clicking within US borders</div>
         </div>
 
-        <!-- Population Data -->
-        <div v-if="locationData.populationData" class="mt-6">
-          <div class="flex items-center gap-2 mb-3">
-            <UserGroupIcon class="size-5 text-blue-600 dark:text-blue-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">State Demographics</h3>
+        <!-- Skeleton Loading States -->
+        <div v-if="!locationData.populationData && !locationData.error" class="mt-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
+              <div class="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded"></div>
+            </div>
+            <div class="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-blue-50 dark:bg-blue-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <UserGroupIcon class="size-4" />
-                Population 21+
-              </div>
-              <div class="text-xl font-semibold text-blue-700 dark:text-blue-300">{{ locationData.populationData['pop21up (first)']?.toLocaleString() }}</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div v-for="i in 4" :key="i" class="rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gray-50 dark:bg-gray-800/50 animate-pulse">
+              <div class="h-4 w-24 bg-gray-300 dark:bg-gray-600 rounded mb-2"></div>
+              <div class="h-8 w-20 bg-gray-300 dark:bg-gray-600 rounded mb-1"></div>
+              <div class="h-3 w-16 bg-gray-300 dark:bg-gray-600 rounded"></div>
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-green-50 dark:bg-green-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <BeakerIcon class="size-4" />
-                Per Capita (21+)
-              </div>
-              <div class="text-xl font-semibold text-green-700 dark:text-green-300">{{ locationData.populationData['gallons_eth / pop21up'] }}</div>
-              <div class="text-xs text-gray-400">gallons/year</div>
+          </div>
+        </div>
+
+        <!-- Population Data -->
+        <div v-if="locationData.populationData" class="mt-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <UserGroupIcon class="size-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-purple-50 dark:bg-purple-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <ChartBarIcon class="size-4" />
-                Total Ethanol
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">State Demographics</h3>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-900/20 dark:to-blue-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-blue-200/20 dark:bg-blue-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-blue-600 dark:text-blue-400 mb-2">
+                  <UserGroupIcon class="size-4" />
+                  Population 21+
+                </div>
+                <div class="text-2xl font-bold text-blue-800 dark:text-blue-200 mb-1">{{ locationData.populationData['pop21up (first)']?.toLocaleString() }}</div>
+                <div class="text-xs text-blue-600/70 dark:text-blue-400/70">adults</div>
               </div>
-              <div class="text-xl font-semibold text-purple-700 dark:text-purple-300">{{ locationData.populationData['Total gallons_eth']?.toLocaleString() }}</div>
-              <div class="text-xs text-gray-400">gallons</div>
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-orange-50 dark:bg-orange-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <BeakerIcon class="size-4" />
-                Total Beverage
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-green-200/20 dark:bg-green-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-green-600 dark:text-green-400 mb-2">
+                  <BeakerIcon class="size-4" />
+                  Per Capita (21+)
+                </div>
+                <div class="text-2xl font-bold text-green-800 dark:text-green-200 mb-1">{{ locationData.populationData['gallons_eth / pop21up'] }}</div>
+                <div class="text-xs text-green-600/70 dark:text-green-400/70">gallons/year</div>
               </div>
-              <div class="text-xl font-semibold text-orange-700 dark:text-orange-300">{{ locationData.populationData['Total gallons_bev']?.toLocaleString() }}</div>
-              <div class="text-xs text-gray-400">gallons</div>
+            </div>
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-purple-200/20 dark:bg-purple-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-purple-600 dark:text-purple-400 mb-2">
+                  <ChartBarIcon class="size-4" />
+                  Total Ethanol
+                </div>
+                <div class="text-2xl font-bold text-purple-800 dark:text-purple-200 mb-1">{{ locationData.populationData['Total gallons_eth']?.toLocaleString() }}</div>
+                <div class="text-xs text-purple-600/70 dark:text-purple-400/70">gallons</div>
+              </div>
+            </div>
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-orange-50 to-orange-100/50 dark:from-orange-900/20 dark:to-orange-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-orange-200/20 dark:bg-orange-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-orange-600 dark:text-orange-400 mb-2">
+                  <BeakerIcon class="size-4" />
+                  Total Beverage
+                </div>
+                <div class="text-2xl font-bold text-orange-800 dark:text-orange-200 mb-1">{{ locationData.populationData['Total gallons_bev']?.toLocaleString() }}</div>
+                <div class="text-xs text-orange-600/70 dark:text-orange-400/70">gallons</div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Nearby Breweries -->
-        <div v-if="locationData.nearbyBreweries && locationData.nearbyBreweries.length > 0" class="mt-6">
-          <div class="flex items-center gap-2 mb-3">
-            <MapPinIcon class="size-5 text-amber-600 dark:text-amber-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
+        <div v-if="locationData.nearbyBreweries && locationData.nearbyBreweries.length > 0" class="mt-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+              <MapPinIcon class="size-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
               {{ locationData.isNearestBreweries ? 'Nearest Breweries' : 'Nearby Breweries' }} ({{ locationData.nearbyBreweries.length }})
             </h3>
           </div>
@@ -286,39 +362,57 @@
         </div>
 
         <!-- Brewery Analysis -->
-        <div v-if="locationData.breweryAnalysis" class="mt-6">
-          <div class="flex items-center gap-2 mb-3">
-            <BuildingOfficeIcon class="size-5 text-green-600 dark:text-green-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Brewery Analysis</h3>
+        <div v-if="locationData.breweryAnalysis" class="mt-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <BuildingOfficeIcon class="size-5 text-green-600 dark:text-green-400" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Brewery Analysis</h3>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-green-50 dark:bg-green-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <BeakerIcon class="size-4" />
-                Total Beers
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-green-200/20 dark:bg-green-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-green-600 dark:text-green-400 mb-2">
+                  <BeakerIcon class="size-4" />
+                  Total Beers
+                </div>
+                <div class="text-2xl font-bold text-green-800 dark:text-green-200 mb-1">{{ locationData.breweryAnalysis.totalBeers }}</div>
+                <div class="text-xs text-green-600/70 dark:text-green-400/70">unique beers</div>
               </div>
-              <div class="text-xl font-semibold text-green-700 dark:text-green-300">{{ locationData.breweryAnalysis.totalBeers }}</div>
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-yellow-50 dark:bg-yellow-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <ChartBarIcon class="size-4" />
-                Avg ABV
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-900/20 dark:to-yellow-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-yellow-200/20 dark:bg-yellow-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-2">
+                  <ChartBarIcon class="size-4" />
+                  Avg ABV
+                </div>
+                <div class="text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-1">{{ locationData.breweryAnalysis.avgAbv }}%</div>
+                <div class="text-xs text-yellow-600/70 dark:text-yellow-400/70">alcohol by volume</div>
               </div>
-              <div class="text-xl font-semibold text-yellow-700 dark:text-yellow-300">{{ locationData.breweryAnalysis.avgAbv }}%</div>
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-red-50 dark:bg-red-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <ChartBarIcon class="size-4" />
-                Avg IBU
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-red-200/20 dark:bg-red-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-red-600 dark:text-red-400 mb-2">
+                  <ChartBarIcon class="size-4" />
+                  Avg IBU
+                </div>
+                <div class="text-2xl font-bold text-red-800 dark:text-red-200 mb-1">{{ locationData.breweryAnalysis.avgIbu }}</div>
+                <div class="text-xs text-red-600/70 dark:text-red-400/70">bitterness units</div>
               </div>
-              <div class="text-xl font-semibold text-red-700 dark:text-red-300">{{ locationData.breweryAnalysis.avgIbu }}</div>
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-purple-50 dark:bg-purple-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <BeakerIcon class="size-4" />
-                Unique Styles
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-purple-200/20 dark:bg-purple-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-purple-600 dark:text-purple-400 mb-2">
+                  <BeakerIcon class="size-4" />
+                  Unique Styles
+                </div>
+                <div class="text-2xl font-bold text-purple-800 dark:text-purple-200 mb-1">{{ locationData.breweryAnalysis.uniqueStyles }}</div>
+                <div class="text-xs text-purple-600/70 dark:text-purple-400/70">beer styles</div>
               </div>
-              <div class="text-xl font-semibold text-purple-700 dark:text-purple-300">{{ locationData.breweryAnalysis.uniqueStyles }}</div>
             </div>
           </div>
 
@@ -338,11 +432,19 @@
         </div>
 
         <!-- Beer Style Analysis -->
-        <div v-if="locationData.beerStyleAnalysis && locationData.beerStyleAnalysis.length > 0" class="mt-6">
-          <div class="flex items-center gap-2 mb-3">
-            <BeakerIcon class="size-5 text-purple-600 dark:text-purple-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Beer Style Breakdown</h3>
+        <div v-if="locationData.beerStyleAnalysis && locationData.beerStyleAnalysis.length > 0" class="mt-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <BeakerIcon class="size-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Beer Style Breakdown</h3>
           </div>
+          <!-- Chart Visualization -->
+          <div class="mb-6">
+            <BeerStyleChart :beer-styles="locationData.beerStyleAnalysis" />
+          </div>
+
+          <!-- Detailed List -->
           <div class="space-y-2 max-h-48 overflow-y-auto">
             <div v-for="style in locationData.beerStyleAnalysis.slice(0, 8)" :key="style.style"
                  class="rounded-lg border border-gray-200 p-3 dark:border-white/10">
@@ -361,67 +463,99 @@
         </div>
 
         <!-- Market Analysis -->
-        <div v-if="locationData.marketAnalysis" class="mt-6">
-          <div class="flex items-center gap-2 mb-3">
-            <CurrencyDollarIcon class="size-5 text-indigo-600 dark:text-indigo-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Market Analysis</h3>
+        <div v-if="locationData.marketAnalysis" class="mt-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+              <CurrencyDollarIcon class="size-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Market Analysis</h3>
           </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-indigo-50 dark:bg-indigo-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <UserGroupIcon class="size-4" />
-                Market Saturation
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/20 dark:to-indigo-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-indigo-200/20 dark:bg-indigo-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-2">
+                  <UserGroupIcon class="size-4" />
+                  Market Saturation
+                </div>
+                <div class="text-2xl font-bold text-indigo-800 dark:text-indigo-200 mb-1">{{ locationData.marketAnalysis.marketSaturation }}</div>
+                <div class="text-xs text-indigo-600/70 dark:text-indigo-400/70">people per brewery</div>
               </div>
-              <div class="text-xl font-semibold text-indigo-700 dark:text-indigo-300">{{ locationData.marketAnalysis.marketSaturation }}</div>
-              <div class="text-xs text-gray-400">people per brewery</div>
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-emerald-50 dark:bg-emerald-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <BeakerIcon class="size-4" />
-                Consumption per Capita
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-emerald-200/20 dark:bg-emerald-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-2">
+                  <BeakerIcon class="size-4" />
+                  Consumption per Capita
+                </div>
+                <div class="text-2xl font-bold text-emerald-800 dark:text-emerald-200 mb-1">{{ locationData.marketAnalysis.consumptionPerCapita }}</div>
+                <div class="text-xs text-emerald-600/70 dark:text-emerald-400/70">gallons/year</div>
               </div>
-              <div class="text-xl font-semibold text-emerald-700 dark:text-emerald-300">{{ locationData.marketAnalysis.consumptionPerCapita }}</div>
-              <div class="text-xs text-gray-400">gallons/year</div>
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10" :class="{
-              'bg-green-50 dark:bg-green-900/20': locationData.marketAnalysis.marketOpportunity === 'High',
-              'bg-yellow-50 dark:bg-yellow-900/20': locationData.marketAnalysis.marketOpportunity === 'Medium',
-              'bg-red-50 dark:bg-red-900/20': locationData.marketAnalysis.marketOpportunity === 'Low'
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-200" :class="{
+              'bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-900/20 dark:to-green-800/10': locationData.marketAnalysis.marketOpportunity === 'High',
+              'bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-900/20 dark:to-yellow-800/10': locationData.marketAnalysis.marketOpportunity === 'Medium',
+              'bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-900/20 dark:to-red-800/10': locationData.marketAnalysis.marketOpportunity === 'Low'
             }">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <ChartPieIcon class="size-4" />
-                Market Opportunity
+              <div class="absolute top-0 right-0 w-20 h-20 rounded-full -translate-y-10 translate-x-10" :class="{
+                'bg-green-200/20 dark:bg-green-800/20': locationData.marketAnalysis.marketOpportunity === 'High',
+                'bg-yellow-200/20 dark:bg-yellow-800/20': locationData.marketAnalysis.marketOpportunity === 'Medium',
+                'bg-red-200/20 dark:bg-red-800/20': locationData.marketAnalysis.marketOpportunity === 'Low'
+              }"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium mb-2" :class="{
+                  'text-green-600 dark:text-green-400': locationData.marketAnalysis.marketOpportunity === 'High',
+                  'text-yellow-600 dark:text-yellow-400': locationData.marketAnalysis.marketOpportunity === 'Medium',
+                  'text-red-600 dark:text-red-400': locationData.marketAnalysis.marketOpportunity === 'Low'
+                }">
+                  <ChartPieIcon class="size-4" />
+                  Market Opportunity
+                </div>
+                <div class="text-2xl font-bold mb-1" :class="{
+                  'text-green-800 dark:text-green-200': locationData.marketAnalysis.marketOpportunity === 'High',
+                  'text-yellow-800 dark:text-yellow-200': locationData.marketAnalysis.marketOpportunity === 'Medium',
+                  'text-red-800 dark:text-red-200': locationData.marketAnalysis.marketOpportunity === 'Low'
+                }">{{ locationData.marketAnalysis.marketOpportunity }}</div>
+                <div class="text-xs" :class="{
+                  'text-green-600/70 dark:text-green-400/70': locationData.marketAnalysis.marketOpportunity === 'High',
+                  'text-yellow-600/70 dark:text-yellow-400/70': locationData.marketAnalysis.marketOpportunity === 'Medium',
+                  'text-red-600/70 dark:text-red-400/70': locationData.marketAnalysis.marketOpportunity === 'Low'
+                }">opportunity level</div>
               </div>
-              <div class="text-xl font-semibold" :class="{
-                'text-green-700 dark:text-green-300': locationData.marketAnalysis.marketOpportunity === 'High',
-                'text-yellow-700 dark:text-yellow-300': locationData.marketAnalysis.marketOpportunity === 'Medium',
-                'text-red-700 dark:text-red-300': locationData.marketAnalysis.marketOpportunity === 'Low'
-              }">{{ locationData.marketAnalysis.marketOpportunity }}</div>
             </div>
-            <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-purple-50 dark:bg-purple-900/20">
-              <div class="flex items-center gap-2 text-xs text-gray-500">
-                <ChartBarIcon class="size-4" />
-                Total Consumption
+            <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+              <div class="absolute top-0 right-0 w-20 h-20 bg-purple-200/20 dark:bg-purple-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+              <div class="relative">
+                <div class="flex items-center gap-2 text-xs font-medium text-purple-600 dark:text-purple-400 mb-2">
+                  <ChartBarIcon class="size-4" />
+                  Total Consumption
+                </div>
+                <div class="text-2xl font-bold text-purple-800 dark:text-purple-200 mb-1">{{ locationData.marketAnalysis.totalConsumption?.toLocaleString() }}</div>
+                <div class="text-xs text-purple-600/70 dark:text-purple-400/70">gallons ethanol</div>
               </div>
-              <div class="text-xl font-semibold text-purple-700 dark:text-purple-300">{{ locationData.marketAnalysis.totalConsumption?.toLocaleString() }}</div>
-              <div class="text-xs text-gray-400">gallons ethanol</div>
             </div>
           </div>
         </div>
 
         <!-- Brewery Density -->
-        <div v-if="locationData.breweryDensity" class="mt-6">
-          <div class="flex items-center gap-2 mb-3">
-            <ChartBarIcon class="size-5 text-cyan-600 dark:text-cyan-400" />
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Brewery Density</h3>
-          </div>
-          <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10 bg-cyan-50 dark:bg-cyan-900/20">
-            <div class="flex items-center gap-2 text-xs text-gray-500">
-              <MapPinIcon class="size-4" />
-              Brewery Count
+        <div v-if="locationData.breweryDensity" class="mt-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+              <ChartBarIcon class="size-5 text-cyan-600 dark:text-cyan-400" />
             </div>
-            <div class="text-xl font-semibold text-cyan-700 dark:text-cyan-300">{{ locationData.breweryDensity.count }} breweries</div>
-            <div class="text-xs text-gray-400">{{ locationData.breweryDensity.density.toFixed(4) }} per sq mile</div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Brewery Density</h3>
+          </div>
+          <div class="group relative overflow-hidden rounded-xl border border-gray-200/50 p-4 dark:border-white/10 bg-gradient-to-br from-cyan-50 to-cyan-100/50 dark:from-cyan-900/20 dark:to-cyan-800/10 shadow-sm hover:shadow-md transition-all duration-200">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-cyan-200/20 dark:bg-cyan-800/20 rounded-full -translate-y-10 translate-x-10"></div>
+            <div class="relative">
+              <div class="flex items-center gap-2 text-xs font-medium text-cyan-600 dark:text-cyan-400 mb-2">
+                <MapPinIcon class="size-4" />
+                Brewery Count
+              </div>
+              <div class="text-2xl font-bold text-cyan-800 dark:text-cyan-200 mb-1">{{ locationData.breweryDensity.count }} breweries</div>
+              <div class="text-xs text-cyan-600/70 dark:text-cyan-400/70">{{ locationData.breweryDensity.density.toFixed(4) }} per sq mile</div>
+            </div>
           </div>
 
           <!-- Search Radius Info -->
@@ -475,6 +609,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 import Map from '@/components/Map.vue'
+import BeerStyleChart from '@/components/BeerStyleChart.vue'
 import BrewLogo from '@/assets/globe_logo.svg'
 import { findStateForLocation } from '@/services/stateService'
 import { findBreweriesNearLocation, getBreweryDensity, getNearestBreweries } from '@/services/breweryService'
@@ -492,6 +627,7 @@ const sidebarOpen = ref(false)
 const detailsOpen = ref(false)
 const locationData = ref<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
 const startupMessageDismissed = ref(false)
+const searchRadius = ref(50)
 
 const mapRef = ref<InstanceType<typeof Map> | null>(null)
 
@@ -505,12 +641,12 @@ async function onLocationSelected(p: { lat: number; lng: number }) {
   mapRef.value?.recenterOn(p.lat, p.lng)
 
   // Show radius circle to indicate search area
-  mapRef.value?.showRadiusCircle(p.lat, p.lng, 50)
+  mapRef.value?.showRadiusCircle(p.lat, p.lng, searchRadius.value)
 
   try {
     const stateResult = await findStateForLocation(p.lng, p.lat)
-    const nearbyBreweries = await findBreweriesNearLocation(p.lat, p.lng, 50)
-    const breweryDensity = await getBreweryDensity(p.lat, p.lng, 50)
+    const nearbyBreweries = await findBreweriesNearLocation(p.lat, p.lng, searchRadius.value)
+    const breweryDensity = await getBreweryDensity(p.lat, p.lng, searchRadius.value)
 
     // If no nearby breweries found, get the nearest ones
     let displayBreweries = nearbyBreweries
@@ -661,4 +797,53 @@ function closeDetails() {
 function dismissStartupMessage() {
   startupMessageDismissed.value = true
 }
+
+function retryLocationAnalysis() {
+  if (locationData.value && locationData.value.lat && locationData.value.lng) {
+    onLocationSelected({ lat: locationData.value.lat, lng: locationData.value.lng })
+  }
+}
+
+function updateSearchRadius() {
+  if (locationData.value && locationData.value.lat && locationData.value.lng) {
+    // Update the radius circle on the map
+    mapRef.value?.showRadiusCircle(locationData.value.lat, locationData.value.lng, searchRadius.value)
+
+    // Re-analyze the location with the new radius
+    onLocationSelected({ lat: locationData.value.lat, lng: locationData.value.lng })
+  }
+}
 </script>
+
+<style scoped>
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3B82F6;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #3B82F6;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dark .slider::-webkit-slider-thumb {
+  background: #10B981;
+  border-color: #1F2937;
+}
+
+.dark .slider::-moz-range-thumb {
+  background: #10B981;
+  border-color: #1F2937;
+}
+</style>
