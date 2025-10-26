@@ -1,73 +1,83 @@
-# vue-template
+# GeoBrewery
 
-This template should help get you started developing with Vue 3 in Vite.
+An interactive web application for analyzing brewery locations, beer styles, and market demographics across the United States. Click anywhere on the map to explore brewery data, population statistics, and market analysis for that location.
 
-## Recommended IDE Setup
+## Features
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Interactive Map**: Click anywhere in the US to analyze that location
+- **Brewery Analysis**: Find nearby breweries within a customizable search radius
+- **Population Demographics**: View state-level population and consumption data
+- **Beer Style Analysis**: Explore the distribution of beer styles in your area
+- **Market Saturation**: Understand brewery density and market opportunities
 
-## Recommended Browser Setup
+## Quick Start
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+### Prerequisites
 
-## Type Support for `.vue` Imports in TS
+- Node.js (version 16 or higher)
+- npm or yarn
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+### Installation
 
-## Customize configuration
+1. Clone the repository:
+```bash
+git clone https://github.com/danielpereira5/geobrewery.git
+cd geobrewery
+```
 
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+2. Install dependencies:
+```bash
 npm install
 ```
 
-### Compile and Hot-Reload for Development
-
-```sh
+3. Start the development server:
+```bash
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+4. Open your browser and navigate to the URL shown in the terminal (typically `http://localhost:5173`)
 
-```sh
-npm run build
-```
+### Development
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+The app runs on Vite with hot module replacement, so changes will be reflected immediately in the browser.
 
-```sh
-npm run test:unit
-```
+**Available Scripts:**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build locally
 
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
+## How to Use
 
-```sh
-# Install browsers for the first run
-npx playwright install
+1. **Explore the Map**: The application opens with an interactive map of the United States
+2. **Click Anywhere**: Click on any location to analyze that area
+3. **Adjust Search Radius**: Use the slider below the demographics to change your search radius (10-100 miles)
+4. **View Analysis**: The sidebar will show:
+   - State demographics and population data
+   - Nearby breweries with distances
+   - Market saturation metrics
+   - Beer style distribution
+   - Consumption statistics
 
-# When testing on CI, must build the project first
-npm run build
+## Technology Stack
 
-# Runs the end-to-end tests
-npm run test:e2e
-# Runs the tests only on Chromium
-npm run test:e2e -- --project=chromium
-# Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
-# Runs the tests in debug mode
-npm run test:e2e -- --debug
-```
+- **Frontend**: Vue 3 with TypeScript
+- **Styling**: Tailwind CSS
+- **Maps**: Leaflet
+- **Charts**: Chart.js
+- **Build Tool**: Vite
 
-### Lint with [ESLint](https://eslint.org/)
+## Data Sources
 
-```sh
-npm run lint
-```
+- Brewery data from Open Brewery DB
+- Population and consumption data from US Census and TTB
+- State boundaries from US Census TIGER/Line
+
+## Recommended IDE Setup
+
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (disable Vetur if installed).
+
+## Browser DevTools
+
+For the best development experience, install Vue.js devtools:
+- [Chrome/Edge](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
+- [Firefox](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
