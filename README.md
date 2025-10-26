@@ -10,7 +10,7 @@ Interactive web app analyzing brewery locations, beer styles, and market demogra
 - **Beer Styles Analysis**: Explore beer styles within selected area
 - **Market Saturation**: brewery density and market opportunities
   
-### Prerequisites
+### Prereq's
 
 - Node.js (version 16 or higher)
 - npm or yarn
