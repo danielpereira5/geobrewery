@@ -12,9 +12,12 @@ import {
 global.fetch = vi.fn();
 
 describe('BreweryService', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     resetBreweries();
+    // Clear cache to ensure fresh tests
+    const { cacheService } = await import('../cacheService');
+    cacheService.clear();
   });
 
   describe('loadBreweriesWithCoords', () => {
@@ -97,10 +100,13 @@ describe('BreweryService', () => {
       expect(result[0].distance).toBeGreaterThanOrEqual(0);
     });
 
-    it('should return empty array when no breweries in radius', async () => {
-      // Coordinates far from any brewery
-      const result = await findBreweriesNearLocation(0, 0, 10);
-      expect(result).toHaveLength(0);
+    it('should return nearest breweries when none within radius', async () => {
+      // Coordinates far from any brewery (North Pole)
+      const result = await findBreweriesNearLocation(90, 0, 10);
+      // Should return up to 5 nearest breweries as fallback
+      expect(result.length).toBeGreaterThan(0);
+      expect(result.length).toBeLessThanOrEqual(5);
+      expect(result[0]).toHaveProperty('distance');
     });
   });
 

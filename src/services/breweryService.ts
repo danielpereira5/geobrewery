@@ -1,4 +1,5 @@
 // Brewery service - migrated from Fall2025Project/src/calcs/breweries.js
+import { cacheService } from './cacheService';
 
 export interface Brewery {
   id: string;
@@ -35,7 +36,18 @@ function parseCSV(text: string): Record<string, string>[] {
 }
 
 export async function loadBreweriesWithCoords(): Promise<Brewery[]> {
-  if (BREWERIES) return BREWERIES;
+  // Check cache first
+  const cacheKey = 'breweries_with_coords';
+  const cached = cacheService.get<Brewery[]>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // Fallback to in-memory cache
+  if (BREWERIES) {
+    cacheService.setWithType(cacheKey, BREWERIES, 'BREWERIES');
+    return BREWERIES;
+  }
 
   try {
     const res = await fetch('/data/breweries_with_coords.csv', { cache: 'no-store' });
@@ -53,6 +65,9 @@ export async function loadBreweriesWithCoords(): Promise<Brewery[]> {
       source: r.source,
       geocode_status: r.geocode_status
     })).filter(r => Number.isFinite(r.lat) && Number.isFinite(r.lon));
+
+    // Cache the result
+    cacheService.setWithType(cacheKey, BREWERIES, 'BREWERIES');
 
     return BREWERIES;
   } catch (error) {
@@ -84,6 +99,13 @@ export async function findBreweriesNearLocation(
   lon: number,
   radiusMiles: number = 50
 ): Promise<BreweryWithDistance[]> {
+  // Check cache first
+  const cacheKey = cacheService.generateBrewerySearchKey(lat, lon, radiusMiles);
+  const cached = cacheService.get<BreweryWithDistance[]>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const breweries = await loadBreweriesWithCoords();
 
   const nearbyBreweries: BreweryWithDistance[] = [];
@@ -111,13 +133,21 @@ export async function findBreweriesNearLocation(
     }
 
     // Return the 5 nearest breweries
-    return allBreweriesWithDistance
+    const result = allBreweriesWithDistance
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 5);
+
+    // Cache the result
+    cacheService.setWithType(cacheKey, result, 'SEARCH_RESULTS');
+    return result;
   }
 
   // Sort by distance
-  return nearbyBreweries.sort((a, b) => a.distance - b.distance);
+  const result = nearbyBreweries.sort((a, b) => a.distance - b.distance);
+
+  // Cache the result
+  cacheService.setWithType(cacheKey, result, 'SEARCH_RESULTS');
+  return result;
 }
 
 // Get breweries by state

@@ -183,6 +183,7 @@
 
   <aside
     v-show="detailsOpen"
+    data-testid="location-details"
     class="fixed inset-y-0 right-0 w-full sm:w-96 overflow-y-auto border-l border-gray-200 bg-white px-4 py-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900 z-40"
   >
     <div class="flex items-start justify-between">
@@ -193,26 +194,6 @@
       </button>
     </div>
 
-    <!-- Radius Selection -->
-    <div v-if="locationData && !locationData.loading && !locationData.error" class="mt-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-      <div class="flex items-center justify-between mb-3">
-        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Search Radius</label>
-        <span class="text-sm text-gray-500 dark:text-gray-400">{{ searchRadius }} miles</span>
-      </div>
-      <input
-        v-model="searchRadius"
-        type="range"
-        min="10"
-        max="100"
-        step="10"
-        @change="updateSearchRadius"
-        class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-      />
-      <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
-        <span>10 mi</span>
-        <span>100 mi</span>
-      </div>
-    </div>
 
     <div v-if="locationData" class="mt-6 space-y-6">
       <div v-if="locationData.loading" class="text-center py-12">
@@ -250,7 +231,7 @@
 
       <div v-else>
         <div v-if="locationData.stateName">
-          <div class="text-lg font-semibold text-white">{{ locationData.stateName }}</div>
+          <div data-testid="state-name" class="text-lg font-semibold text-white">{{ locationData.stateName }}</div>
           <div class="mt-1 text-sm text-gray-500">State ID: {{ locationData.stateId }}</div>
         </div>
         <div v-else>
@@ -291,7 +272,7 @@
                   <UserGroupIcon class="size-4" />
                   Population 21+
                 </div>
-                <div class="text-2xl font-bold text-blue-800 dark:text-blue-200 mb-1">{{ locationData.populationData['pop21up (first)']?.toLocaleString() }}</div>
+                <div :class="['font-bold text-blue-800 dark:text-blue-200 mb-1', formatLargeNumber(locationData.populationData['pop21up (first)']).size]">{{ formatLargeNumber(locationData.populationData['pop21up (first)']).text }}</div>
                 <div class="text-xs text-blue-600/70 dark:text-blue-400/70">adults</div>
               </div>
             </div>
@@ -313,7 +294,7 @@
                   <ChartBarIcon class="size-4" />
                   Total Ethanol
                 </div>
-                <div class="text-2xl font-bold text-purple-800 dark:text-purple-200 mb-1">{{ locationData.populationData['Total gallons_eth']?.toLocaleString() }}</div>
+                <div :class="['font-bold text-purple-800 dark:text-purple-200 mb-1', formatLargeNumber(locationData.populationData['Total gallons_eth']).size]">{{ formatLargeNumber(locationData.populationData['Total gallons_eth']).text }}</div>
                 <div class="text-xs text-purple-600/70 dark:text-purple-400/70">gallons</div>
               </div>
             </div>
@@ -324,7 +305,7 @@
                   <BeakerIcon class="size-4" />
                   Total Beverage
                 </div>
-                <div class="text-2xl font-bold text-orange-800 dark:text-orange-200 mb-1">{{ locationData.populationData['Total gallons_bev']?.toLocaleString() }}</div>
+                <div :class="['font-bold text-orange-800 dark:text-orange-200 mb-1', formatLargeNumber(locationData.populationData['Total gallons_bev']).size]">{{ formatLargeNumber(locationData.populationData['Total gallons_bev']).text }}</div>
                 <div class="text-xs text-orange-600/70 dark:text-orange-400/70">gallons</div>
               </div>
             </div>
@@ -361,6 +342,27 @@
           </div>
         </div>
 
+        <!-- Radius Selection -->
+        <div v-if="locationData && !locationData.loading && !locationData.error" class="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+          <div class="flex items-center justify-between mb-3">
+            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Search Radius</label>
+            <span class="text-sm text-gray-500 dark:text-gray-400">{{ searchRadius }} miles</span>
+          </div>
+          <input
+            v-model="searchRadius"
+            type="range"
+            min="10"
+            max="100"
+            step="10"
+            @change="updateSearchRadius"
+            class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+          />
+          <div class="flex justify-between text-xs text-gray-400 dark:text-gray-500 mt-1">
+            <span>10 mi</span>
+            <span>100 mi</span>
+          </div>
+        </div>
+
         <!-- Brewery Analysis -->
         <div v-if="locationData.breweryAnalysis" class="mt-8">
           <div class="flex items-center gap-3 mb-4">
@@ -377,7 +379,7 @@
                   <BeakerIcon class="size-4" />
                   Total Beers
                 </div>
-                <div class="text-2xl font-bold text-green-800 dark:text-green-200 mb-1">{{ locationData.breweryAnalysis.totalBeers }}</div>
+                <div data-testid="brewery-count" class="text-2xl font-bold text-green-800 dark:text-green-200 mb-1">{{ locationData.breweryAnalysis.totalBeers }}</div>
                 <div class="text-xs text-green-600/70 dark:text-green-400/70">unique beers</div>
               </div>
             </div>
@@ -432,7 +434,7 @@
         </div>
 
         <!-- Beer Style Analysis -->
-        <div v-if="locationData.beerStyleAnalysis && locationData.beerStyleAnalysis.length > 0" class="mt-8">
+        <div v-if="locationData.beerStyleAnalysis && locationData.beerStyleAnalysis.length > 0" data-testid="beer-styles" class="mt-8">
           <div class="flex items-center gap-3 mb-4">
             <div class="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <BeakerIcon class="size-5 text-purple-600 dark:text-purple-400" />
@@ -478,7 +480,7 @@
                   <UserGroupIcon class="size-4" />
                   Market Saturation
                 </div>
-                <div class="text-2xl font-bold text-indigo-800 dark:text-indigo-200 mb-1">{{ locationData.marketAnalysis.marketSaturation }}</div>
+                <div data-testid="market-saturation" :class="['font-bold text-indigo-800 dark:text-indigo-200 mb-1', formatLargeNumber(locationData.marketAnalysis.marketSaturation).size]">{{ formatLargeNumber(locationData.marketAnalysis.marketSaturation).text }}</div>
                 <div class="text-xs text-indigo-600/70 dark:text-indigo-400/70">people per brewery</div>
               </div>
             </div>
@@ -531,7 +533,7 @@
                   <ChartBarIcon class="size-4" />
                   Total Consumption
                 </div>
-                <div class="text-2xl font-bold text-purple-800 dark:text-purple-200 mb-1">{{ locationData.marketAnalysis.totalConsumption?.toLocaleString() }}</div>
+                <div :class="['font-bold text-purple-800 dark:text-purple-200 mb-1', formatLargeNumber(locationData.marketAnalysis.totalConsumption).size]">{{ formatLargeNumber(locationData.marketAnalysis.totalConsumption).text }}</div>
                 <div class="text-xs text-purple-600/70 dark:text-purple-400/70">gallons ethanol</div>
               </div>
             </div>
@@ -630,6 +632,27 @@ const startupMessageDismissed = ref(false)
 const searchRadius = ref(50)
 
 const mapRef = ref<InstanceType<typeof Map> | null>(null)
+
+// Helper function to format large numbers with appropriate sizing
+function formatLargeNumber(value: number | string | undefined): { text: string; size: string } {
+  if (!value || value === '—') return { text: 'N/A', size: 'text-2xl' }
+
+  // Handle formatted strings (remove commas and convert to number)
+  const cleanValue = typeof value === 'string' ? value.replace(/,/g, '') : value
+  const num = Number(cleanValue)
+
+  if (isNaN(num)) return { text: 'N/A', size: 'text-2xl' }
+
+  if (num >= 1000000000) {
+    return { text: (num / 1000000000).toFixed(1) + 'B', size: 'text-xl' }
+  } else if (num >= 1000000) {
+    return { text: (num / 1000000).toFixed(1) + 'M', size: 'text-xl' }
+  } else if (num >= 1000) {
+    return { text: (num / 1000).toFixed(1) + 'K', size: 'text-2xl' }
+  } else {
+    return { text: num.toLocaleString(), size: 'text-2xl' }
+  }
+}
 
 async function onLocationSelected(p: { lat: number; lng: number }) {
   detailsOpen.value = true

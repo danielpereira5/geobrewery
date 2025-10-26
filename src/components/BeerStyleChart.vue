@@ -110,14 +110,7 @@ const createChart = () => {
           }
         },
         title: {
-          display: true,
-          text: 'Beer Style Distribution',
-          font: {
-            size: 14,
-            weight: 'bold'
-          },
-          color: '#374151',
-          padding: 20
+          display: false
         }
       },
       cutout: '60%'
