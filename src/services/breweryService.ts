@@ -98,6 +98,24 @@ export async function findBreweriesNearLocation(
     }
   }
 
+  // If no breweries found within radius, find the nearest ones anyway
+  if (nearbyBreweries.length === 0) {
+    const allBreweriesWithDistance: BreweryWithDistance[] = [];
+
+    for (const brewery of breweries) {
+      const distance = calculateDistance(lat, lon, brewery.lat, brewery.lon);
+      allBreweriesWithDistance.push({
+        ...brewery,
+        distance
+      });
+    }
+
+    // Return the 5 nearest breweries
+    return allBreweriesWithDistance
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 5);
+  }
+
   // Sort by distance
   return nearbyBreweries.sort((a, b) => a.distance - b.distance);
 }
@@ -108,6 +126,28 @@ export async function getBreweriesByState(state: string): Promise<Brewery[]> {
   return breweries.filter(brewery =>
     brewery.state.toLowerCase().trim() === state.toLowerCase().trim()
   );
+}
+
+// Get the nearest breweries regardless of distance
+export async function getNearestBreweries(
+  lat: number,
+  lon: number,
+  limit: number = 10
+): Promise<BreweryWithDistance[]> {
+  const breweries = await loadBreweriesWithCoords();
+  const allBreweriesWithDistance: BreweryWithDistance[] = [];
+
+  for (const brewery of breweries) {
+    const distance = calculateDistance(lat, lon, brewery.lat, brewery.lon);
+    allBreweriesWithDistance.push({
+      ...brewery,
+      distance
+    });
+  }
+
+  return allBreweriesWithDistance
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, limit);
 }
 
 // Get brewery density for a given area (breweries per square mile)

@@ -153,7 +153,42 @@ export async function getLatestStateData(stateId: number): Promise<StateYearSumm
 
   if (years.length === 0) return null;
 
-  return getStateYearSummary(stateId, years[0]);
+  return getStateYearSummary(stateId, years[0]!);
+}
+
+// Get latest consumption data for a state with raw numbers (not formatted)
+export async function getLatestStateDataRaw(stateId: number): Promise<{
+  population21Plus: number;
+  consumptionPerCapita: number;
+  totalConsumption: number;
+  year: number;
+} | null> {
+  await loadPcyr();
+
+  // Find the latest year with data for this state
+  const years = [...new Set(DB!.filter(r => r.geographicID === stateId).map(r => r.year))].sort((a, b) => b - a);
+
+  if (years.length === 0) return null;
+
+  const year = years[0];
+  const rows = DB!.filter(r => r.year === year && r.geographicID === stateId);
+
+  let gallons_eth_total = 0;
+  let pop21up: number | null = null;
+
+  for (const r of rows) {
+    if (r.gallons_eth != null) gallons_eth_total += r.gallons_eth;
+    if (r.pop21up != null && pop21up == null) pop21up = r.pop21up;
+  }
+
+  const consumptionPerCapita = (pop21up && gallons_eth_total) ? (gallons_eth_total / pop21up) : 0;
+
+  return {
+    population21Plus: pop21up || 0,
+    consumptionPerCapita,
+    totalConsumption: gallons_eth_total,
+    year: year!
+  };
 }
 
 // Compare consumption between states
