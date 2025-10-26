@@ -3,8 +3,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue'
-import L, { Map, CircleMarker } from 'leaflet'
+defineOptions({
+  name: 'BreweryMap'
+})
+
+import { onMounted, onBeforeUnmount, ref, nextTick } from 'vue'
+import L, { Map as LeafletMap, CircleMarker } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 // (optional) icon path fix if you use default markers
@@ -17,56 +21,96 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadowUrl,
 })
 
-type Pt = { id:number; name:string; lat:number; lng:number; sales:number; growthPct:number }
-const points: Pt[] = [
-  { id: 1, name: 'Austin, TX',  lat: 30.2672, lng: -97.7431, sales: 120000, growthPct: 8.3 },
-  { id: 2, name: 'Dallas, TX',  lat: 32.7767, lng: -96.7970, sales: 98000,  growthPct: 5.1 },
-  { id: 3, name: 'Houston, TX', lat: 29.7604, lng: -95.3698, sales: 150000, growthPct: 12.0 },
-]
+import { loadBreweriesWithCoords } from '@/services/breweryService'
+import { loadBeers } from '@/services/beerService'
 
 const emit = defineEmits<{
-  (e: 'city-selected', payload: Pt): void
+  (e: 'location-selected', payload: { lat: number; lng: number; state?: string }): void
 }>()
 
 const mapEl = ref<HTMLDivElement | null>(null)
-let map: Map | null = null
+let map: LeafletMap | null = null
+const markers: CircleMarker[] = []
 
-function sizeBySales(v: number) {
-  const vals = points.map(p => p.sales)
-  const min = Math.min(...vals), max = Math.max(...vals)
-  const minR = 6, maxR = 20
-  if (min === max) return (minR + maxR) / 2
-  return minR + (Math.sqrt(v - min) / Math.sqrt(max - min)) * (maxR - minR)
-}
+// Store beer count per brewery for markers
+const beerCounts = new Map<number, number>()
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick()
   if (!mapEl.value) return
-  map = L.map(mapEl.value, { center: [31, -97], zoom: 6, preferCanvas: true })
+
+  map = L.map(mapEl.value, { center: [39.8283, -98.5795], zoom: 4, preferCanvas: true })
+
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a> contributors, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     subdomains: 'abcd',
   }).addTo(map)
 
-  const layer = L.layerGroup().addTo(map)
+  // Load brewery data
+  await loadBreweries()
 
-  points.forEach(p => {
-    const color = p.growthPct >= 0 ? '#16a34a' : '#dc2626'
-    const cm: CircleMarker = L.circleMarker([p.lat, p.lng], {
-      radius: sizeBySales(p.sales),
-      color, fillColor: color, fillOpacity: 0.25, weight: 1.5
-    }).addTo(layer)
-
-    cm.on('click', () => {
-      emit('city-selected', p)
-      // optional: keep popup too
-      cm.bindPopup(`<b>${p.name}</b><br/>Sales: $${p.sales.toLocaleString()}<br/>Growth: ${p.growthPct}%`).openPopup()
-    })
-  })
-
-  const bounds = points.map(p => [p.lat, p.lng]) as [number, number][]
-  if (bounds.length) map.fitBounds(bounds, { padding: [40, 40] })
+  // Add click handler for map clicks
+  map.on('click', handleMapClick)
 })
+
+async function loadBreweries() {
+  try {
+    // Load both breweries and beers
+    const [breweries, beers] = await Promise.all([
+      loadBreweriesWithCoords(),
+      loadBeers()
+    ])
+
+    // Count beers per brewery
+    for (const beer of beers) {
+      const breweryId = parseInt(String(beer.brewery_id))
+      const currentCount = beerCounts.get(breweryId) || 0
+      beerCounts.set(breweryId, currentCount + 1)
+    }
+
+    // Add brewery markers
+    const bounds: [number, number][] = []
+
+    for (const brewery of breweries) {
+      const beerCount = beerCounts.get(parseInt(brewery.id)) || 0
+      const size = Math.max(4, Math.min(12, 4 + beerCount / 2))
+
+      const marker: CircleMarker = L.circleMarker([brewery.lat, brewery.lon], {
+        radius: size,
+        color: '#16a34a',
+        fillColor: '#16a34a',
+        fillOpacity: 0.25,
+        weight: 1.5
+      }).addTo(map!)
+
+      // Add popup
+      const popupContent = `
+        <div style="min-width: 150px;">
+          <b>${brewery.name}</b><br/>
+          ${brewery.city}, ${brewery.state}<br/>
+          <small>Beers: ${beerCount}</small>
+        </div>
+      `
+      marker.bindPopup(popupContent)
+
+      markers.push(marker)
+      bounds.push([brewery.lat, brewery.lon])
+    }
+
+    // Fit map to show all breweries
+    if (bounds.length > 0) {
+      map!.fitBounds(bounds, { padding: [40, 40] })
+    }
+  } catch (error) {
+    console.error('Error loading breweries:', error)
+  }
+}
+
+function handleMapClick(e: L.LeafletMouseEvent) {
+  const { lat, lng } = e.latlng
+  emit('location-selected', { lat, lng })
+}
 
 // Expose a resize hook the parent can call after opening the details panel
 function resize() { map?.invalidateSize() }

@@ -145,7 +145,7 @@
 
     <main class="lg:pl-72 flex flex-col h-screen">
       <div :class="['flex-1 overflow-hidden transition-[padding] duration-200', detailsOpen ? 'xl:pr-96' : '']">
-        <Map ref="mapRef" @city-selected="onCitySelected" />
+        <Map ref="mapRef" @location-selected="onLocationSelected" />
       </div>
     </main>
 
@@ -154,47 +154,97 @@
     class="fixed inset-y-0 right-0 w-96 overflow-y-auto border-l border-gray-200 bg-white px-4 py-6 sm:px-6 lg:px-8 dark:border-white/10 dark:bg-gray-900"
   >
     <div class="flex items-start justify-between">
-      <h2 class="text-base font-semibold text-gray-900 dark:text-white">Location details</h2>
+      <h2 class="text-base font-semibold text-gray-900 dark:text-white">Location Analysis</h2>
       <button @click="closeDetails" class="p-2 rounded hover:bg-gray-100 dark:hover:bg-white/10">
         <XMarkIcon class="size-5" />
         <span class="sr-only">Close panel</span>
       </button>
     </div>
 
-    <div v-if="selectedCity" class="mt-6 space-y-6">
-      <div>
-        <div class="text-lg font-semibold">{{ selectedCity.name }}</div>
-        <div class="mt-1 text-sm text-gray-500">ID: {{ selectedCity.id }}</div>
+    <div v-if="locationData" class="mt-6 space-y-6">
+      <div v-if="locationData.loading" class="text-center py-8">
+        <svg class="animate-spin h-8 w-8 text-indigo-600 dark:text-green-400 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="mt-4 text-gray-500 dark:text-gray-400">Loading location data...</p>
       </div>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10">
-          <div class="text-xs text-gray-500">Sales</div>
-          <div class="text-xl font-semibold">${{ selectedCity.sales.toLocaleString() }}</div>
+      <div v-else-if="locationData.error" class="text-center py-8 text-red-600 dark:text-red-400">
+        <p>{{ locationData.error }}</p>
+      </div>
+
+      <div v-else>
+        <div v-if="locationData.stateName">
+          <div class="text-lg font-semibold">{{ locationData.stateName }}</div>
+          <div class="mt-1 text-sm text-gray-500">State ID: {{ locationData.stateId }}</div>
         </div>
-        <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10">
-          <div class="text-xs text-gray-500">Growth</div>
-          <div :class="['text-xl font-semibold', selectedCity.growthPct >= 0 ? 'text-emerald-600' : 'text-rose-600']">
-            {{ selectedCity.growthPct.toFixed(1) }}%
+        <div v-else>
+          <div class="text-lg font-semibold text-gray-500">No state detected</div>
+          <div class="mt-1 text-sm text-gray-500">Try clicking within US borders</div>
+        </div>
+
+        <!-- Population Data -->
+        <div v-if="locationData.populationData" class="grid grid-cols-2 gap-4 mt-6">
+          <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10">
+            <div class="text-xs text-gray-500">Population 21+</div>
+            <div class="text-xl font-semibold">{{ locationData.populationData['pop21up (first)'] }}</div>
+          </div>
+          <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10">
+            <div class="text-xs text-gray-500">Per Capita (21+)</div>
+            <div class="text-xl font-semibold">{{ locationData.populationData['gallons_eth / pop21up'] }}</div>
+            <div class="text-xs text-gray-400">gallons/year</div>
+          </div>
+          <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10">
+            <div class="text-xs text-gray-500">Total Ethanol</div>
+            <div class="text-xl font-semibold">{{ locationData.populationData['Total gallons_eth'] }}</div>
+            <div class="text-xs text-gray-400">gallons</div>
+          </div>
+          <div class="rounded-lg border border-gray-200 p-3 dark:border-white/10">
+            <div class="text-xs text-gray-500">Total Beverage</div>
+            <div class="text-xl font-semibold">{{ locationData.populationData['Total gallons_bev'] }}</div>
+            <div class="text-xs text-gray-400">gallons</div>
           </div>
         </div>
-      </div>
 
-      <dl class="divide-y divide-gray-200 dark:divide-white/10 rounded-lg border border-gray-200 dark:border-white/10">
-        <div class="grid grid-cols-3 gap-4 p-3">
-          <dt class="text-sm text-gray-500">Latitude</dt>
-          <dd class="col-span-2 text-sm font-medium">{{ selectedCity.lat }}</dd>
+        <!-- Nearby Breweries -->
+        <div v-if="locationData.nearbyBreweries && locationData.nearbyBreweries.length > 0" class="mt-6">
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Nearby Breweries ({{ locationData.nearbyBreweries.length }})</h3>
+          <div class="space-y-2 max-h-60 overflow-y-auto">
+            <div v-for="brewery in locationData.nearbyBreweries.slice(0, 10)" :key="brewery.id" class="rounded-lg border border-gray-200 p-3 dark:border-white/10">
+              <div class="text-sm font-medium">{{ brewery.name }}</div>
+              <div class="text-xs text-gray-500">{{ brewery.city }}, {{ brewery.state }}</div>
+              <div class="text-xs text-emerald-600 mt-1">{{ brewery.distance.toFixed(1) }} miles away</div>
+            </div>
+            <div v-if="locationData.nearbyBreweries.length > 10" class="text-xs text-gray-500 text-center py-2">
+              +{{ locationData.nearbyBreweries.length - 10 }} more
+            </div>
+          </div>
         </div>
-        <div class="grid grid-cols-3 gap-4 p-3">
-          <dt class="text-sm text-gray-500">Longitude</dt>
-          <dd class="col-span-2 text-sm font-medium">{{ selectedCity.lng }}</dd>
+
+        <!-- Brewery Density -->
+        <div v-if="locationData.breweryDensity" class="rounded-lg border border-gray-200 p-3 dark:border-white/10 mt-6">
+          <div class="text-xs text-gray-500">Brewery Density</div>
+          <div class="text-xl font-semibold">{{ locationData.breweryDensity.count }} breweries</div>
+          <div class="text-xs text-gray-400">{{ locationData.breweryDensity.density.toFixed(4) }} per sq mile</div>
         </div>
-        <!-- add more fields here as needed -->
-      </dl>
+
+        <!-- Coordinates -->
+        <dl class="divide-y divide-gray-200 dark:divide-white/10 rounded-lg border border-gray-200 dark:border-white/10 mt-6">
+          <div class="grid grid-cols-3 gap-4 p-3">
+            <dt class="text-sm text-gray-500">Latitude</dt>
+            <dd class="col-span-2 text-sm font-medium">{{ locationData.lat.toFixed(4) }}</dd>
+          </div>
+          <div class="grid grid-cols-3 gap-4 p-3">
+            <dt class="text-sm text-gray-500">Longitude</dt>
+            <dd class="col-span-2 text-sm font-medium">{{ locationData.lng.toFixed(4) }}</dd>
+          </div>
+        </dl>
+      </div>
     </div>
 
     <div v-else class="mt-6 text-sm text-gray-500">
-      Click a city to see details.
+      Click on the map to see location details.
     </div>
   </aside>
 
@@ -217,6 +267,9 @@ import {
 
 import Map from '@/components/Map.vue'
 import BrewLogo from '@/assets/globe_logo.svg'
+import { findStateForLocation } from '@/services/stateService'
+import { findBreweriesNearLocation, getBreweryDensity } from '@/services/breweryService'
+import { getLatestStateData } from '@/services/populationService'
 
 const navigation = [
   { name: 'Dashboard', href: '#', icon: HomeIcon, current: true },
@@ -232,21 +285,49 @@ const teams = [
   { id: 3, name: 'Workcation', href: '#', initial: 'W', current: false },
 ]
 
-const sidebarOpen = ref(false)          // left mobile sidebar
-const detailsOpen = ref(false)          // right details panel (xl+)
-const selectedCity = ref<any>(null)     // holds the clicked city’s data
+const sidebarOpen = ref(false)
+const detailsOpen = ref(false)
+const locationData = ref<any>(null) // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const mapRef = ref<InstanceType<typeof Map> | null>(null)
 
-async function onCitySelected(p: any) {
-  selectedCity.value = p
+async function onLocationSelected(p: { lat: number; lng: number }) {
   detailsOpen.value = true
-  // let the panel render, then tell Leaflet to recompute size
-  await nextTick()
-  // pad the middle area via class (see template), then invalidatesize:
-  mapRef.value?.resize()
-  mapRef.value?.recenterOn(selectedCity.value.lat, selectedCity.value.lng)
 
+  locationData.value = { ...p, loading: true }
+
+  await nextTick()
+  mapRef.value?.resize()
+  mapRef.value?.recenterOn(p.lat, p.lng)
+
+  try {
+    const stateResult = await findStateForLocation(p.lng, p.lat)
+    const nearbyBreweries = await findBreweriesNearLocation(p.lat, p.lng, 50)
+    const breweryDensity = await getBreweryDensity(p.lat, p.lng, 50)
+
+    let populationData = null
+    if (stateResult) {
+      populationData = await getLatestStateData(stateResult.stateId)
+    }
+
+    locationData.value = {
+      lat: p.lat,
+      lng: p.lng,
+      stateId: stateResult?.stateId,
+      stateName: stateResult?.stateName,
+      nearbyBreweries,
+      breweryDensity,
+      populationData,
+      loading: false
+    }
+  } catch (error) {
+    console.error('Error loading location data:', error)
+    locationData.value = {
+      ...p,
+      error: 'Failed to load location data',
+      loading: false
+    }
+  }
 }
 
 function closeDetails() {

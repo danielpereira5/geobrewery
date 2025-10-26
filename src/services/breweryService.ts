@@ -22,13 +22,14 @@ export function resetBreweries() {
   BREWERIES = null;
 }
 
-function parseCSV(text: string): any[] {
+function parseCSV(text: string): Record<string, string>[] {
   const [header, ...lines] = text.trim().split(/\r?\n/);
+  if (!header) return [];
   const headers = header.split(',').map(s => s.trim());
   return lines.map(line => {
     const cells = line.split(',').map(s => s.trim());
-    const o: any = {};
-    headers.forEach((h, i) => o[h] = cells[i]);
+    const o: Record<string, string> = {};
+    headers.forEach((h, i) => o[h] = cells[i] || '');
     return o;
   });
 }
