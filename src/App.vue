@@ -57,13 +57,19 @@
                       </ul>
                     </li>
                     <li>
-                      <div class="text-xs/6 font-semibold text-gray-400 dark:text-gray-500">Your teams</div>
+                      <div class="text-xs/6 font-semibold text-gray-400 dark:text-gray-500">Advanced features</div>
                       <ul role="list" class="-mx-2 mt-2 space-y-1">
                         <li v-for="team in teams" :key="team.name">
-                          <a :href="team.href" :class="[team.current ? 'bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white', 'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold']">
-                            <span :class="[team.current ? 'border-indigo-600 text-indigo-600 dark:border-white/20 dark:text-white' : 'border-gray-200 text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-white/10 dark:group-hover:border-white/20 dark:group-hover:text-white', 'flex size-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium dark:bg-white/5']">{{ team.initial }}</span>
+                          <a v-if="!team.disabled" :href="team.href" :class="[team.current ? 'bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white', 'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold']">
+                            <component v-if="team.icon" :is="team.icon" :class="[team.current ? 'text-indigo-600 dark:text-white' : 'text-gray-400 group-hover:text-indigo-600 dark:text-gray-500 dark:group-hover:text-white', 'size-6 shrink-0']" aria-hidden="true" />
+                            <span v-else :class="[team.current ? 'border-indigo-600 text-indigo-600 dark:border-white/20 dark:text-white' : 'border-gray-200 text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-white/10 dark:group-hover:border-white/20 dark:group-hover:text-white', 'flex size-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium dark:bg-white/5']">{{ team.initial || team.name.charAt(0) }}</span>
                             <span class="truncate">{{ team.name }}</span>
                           </a>
+                          <div v-else :class="['text-gray-400 dark:text-gray-500', 'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold cursor-not-allowed opacity-50']">
+                            <component v-if="team.icon" :is="team.icon" class="size-6 shrink-0 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+                            <span v-else class="flex size-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 bg-white text-[0.625rem] font-medium dark:bg-white/5 dark:border-white/10">{{ team.initial || team.name.charAt(0) }}</span>
+                            <span class="truncate">{{ team.name }}</span>
+                          </div>
                         </li>
                       </ul>
                     </li>
@@ -109,13 +115,19 @@
               </ul>
             </li>
             <li>
-              <div class="text-xs/6 font-semibold text-gray-400 dark:text-gray-500">Your teams</div>
+              <div class="text-xs/6 font-semibold text-gray-400 dark:text-gray-500">Advanced features</div>
               <ul role="list" class="-mx-2 mt-2 space-y-1">
                 <li v-for="team in teams" :key="team.name">
-                  <a :href="team.href" :class="[team.current ? 'bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white', 'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold']">
-                    <span :class="[team.current ? 'border-indigo-600 text-indigo-600 dark:border-white/20 dark:text-white' : 'border-gray-200 text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-white/10 dark:group-hover:border-white/20 dark:group-hover:text-white', 'flex size-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium dark:bg-white/5']">{{ team.initial }}</span>
+                  <a v-if="!team.disabled" :href="team.href" :class="[team.current ? 'bg-gray-50 text-indigo-600 dark:bg-white/5 dark:text-white' : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white', 'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold']">
+                    <component v-if="team.icon" :is="team.icon" :class="[team.current ? 'text-indigo-600 dark:text-white' : 'text-gray-400 group-hover:text-indigo-600 dark:text-gray-500 dark:group-hover:text-white', 'size-6 shrink-0']" aria-hidden="true" />
+                    <span v-else :class="[team.current ? 'border-indigo-600 text-indigo-600 dark:border-white/20 dark:text-white' : 'border-gray-200 text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600 dark:border-white/10 dark:group-hover:border-white/20 dark:group-hover:text-white', 'flex size-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium dark:bg-white/5']">{{ team.initial || team.name.charAt(0) }}</span>
                     <span class="truncate">{{ team.name }}</span>
                   </a>
+                  <div v-else :class="['text-gray-400 dark:text-gray-500', 'group flex gap-x-3 rounded-md p-2 text-sm/6 font-semibold cursor-not-allowed opacity-50']">
+                    <component v-if="team.icon" :is="team.icon" class="size-6 shrink-0 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+                    <span v-else class="flex size-6 shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-400 bg-white text-[0.625rem] font-medium dark:bg-white/5 dark:border-white/10">{{ team.initial || team.name.charAt(0) }}</span>
+                    <span class="truncate">{{ team.name }}</span>
+                  </div>
                 </li>
               </ul>
             </li>
@@ -450,12 +462,7 @@ import { ref, nextTick } from 'vue'
 import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessui/vue'
 import {
   Bars3Icon,
-  CalendarIcon,
   ChartPieIcon,
-  DocumentDuplicateIcon,
-  FolderIcon,
-  HomeIcon,
-  UsersIcon,
   XMarkIcon,
   BeakerIcon,
   MapPinIcon,
@@ -463,6 +470,8 @@ import {
   BuildingOfficeIcon,
   CurrencyDollarIcon,
   UserGroupIcon,
+  GlobeAltIcon,
+  TagIcon,
 } from '@heroicons/vue/24/outline'
 
 import Map from '@/components/Map.vue'
@@ -473,17 +482,10 @@ import { getLatestStateData, getLatestStateDataRaw } from '@/services/population
 import { getBeersByBrewery } from '@/services/beerService'
 
 const navigation = [
-  { name: 'Dashboard', href: '#', icon: HomeIcon, current: true },
-  { name: 'Team', href: '#', icon: UsersIcon, current: false },
-  { name: 'Projects', href: '#', icon: FolderIcon, current: false },
-  { name: 'Calendar', href: '#', icon: CalendarIcon, current: false },
-  { name: 'Documents', href: '#', icon: DocumentDuplicateIcon, current: false },
-  { name: 'Reports', href: '#', icon: ChartPieIcon, current: false },
+  { name: 'Dashboard', href: '#', icon: GlobeAltIcon, current: true },
 ]
 const teams = [
-  { id: 1, name: 'Heroicons', href: '#', initial: 'H', current: false },
-  { id: 2, name: 'Tailwind Labs', href: '#', initial: 'T', current: false },
-  { id: 3, name: 'Workcation', href: '#', initial: 'W', current: false },
+  { id: 1, name: 'Optimization', href: '#', icon: TagIcon, current: false, disabled: true, initial: 'O' },
 ]
 
 const sidebarOpen = ref(false)
